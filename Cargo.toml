@@ -1,0 +1,12 @@
+[package]
+name = "fstab"
+version = "0.1.0"
+authors = ["Chris Holcombe <xfactor973@gmail.com>"]
+description = "An fstab parser and modifier"
+license = "MIT"
+documentation = "https://docs.rs/fstab"
+repository = "https://github.com/cholcombe973/fstab"
+homepage = "https://github.com/cholcombe973/fstab"
+
+[dependencies]
+log = "~0.3"
