@@ -195,7 +195,7 @@ impl FsTab {
 
     /// Remove the fstab entry that corresponds to the spec given.  IE: first fields match
     /// Returns true if the value was present in the fstab.
-    pub fn remove_entry(&self, spec: String) -> Result<bool, Error> {
+    pub fn remove_entry(&self, spec: &str) -> Result<bool, Error> {
         let mut entries = self.get_entries()?;
         let position = entries.iter().position(|e| e.fs_spec == spec);
 
