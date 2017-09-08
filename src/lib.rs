@@ -9,39 +9,40 @@ use std::str::FromStr;
 #[test]
 fn test_parser() {
     use std::io::Cursor;
-    let expected_results =
-        vec![FsEntry {
-                 fs_spec: "/dev/mapper/xubuntu--vg--ssd-root".to_string(),
-                 mountpoint: PathBuf::from("/"),
-                 vfs_type: "ext4".to_string(),
-                 mount_options: vec!["noatime".to_string(), "errors=remount-ro".to_string()],
-                 dump: false,
-                 fsck_order: 1,
-             },
-             FsEntry {
-                 fs_spec: "UUID=378f3c86-b21a-4172-832d-e2b3d4bc7511".to_string(),
-                 mountpoint: PathBuf::from("/boot"),
-                 vfs_type: "ext2".to_string(),
-                 mount_options: vec!["defaults".to_string()],
-                 dump: false,
-                 fsck_order: 2,
-             },
-             FsEntry {
-                 fs_spec: "/dev/mapper/xubuntu--vg--ssd-swap_1".to_string(),
-                 mountpoint: PathBuf::from("none"),
-                 vfs_type: "swap".to_string(),
-                 mount_options: vec!["sw".to_string()],
-                 dump: false,
-                 fsck_order: 0,
-             },
-             FsEntry {
-                 fs_spec: "UUID=be8a49b9-91a3-48df-b91b-20a0b409ba0f".to_string(),
-                 mountpoint: PathBuf::from("/mnt/raid"),
-                 vfs_type: "ext4".to_string(),
-                 mount_options: vec!["errors=remount-ro".to_string(), "user".to_string()],
-                 dump: false,
-                 fsck_order: 1,
-             }];
+    let expected_results = vec![
+        FsEntry {
+            fs_spec: "/dev/mapper/xubuntu--vg--ssd-root".to_string(),
+            mountpoint: PathBuf::from("/"),
+            vfs_type: "ext4".to_string(),
+            mount_options: vec!["noatime".to_string(), "errors=remount-ro".to_string()],
+            dump: false,
+            fsck_order: 1,
+        },
+        FsEntry {
+            fs_spec: "UUID=378f3c86-b21a-4172-832d-e2b3d4bc7511".to_string(),
+            mountpoint: PathBuf::from("/boot"),
+            vfs_type: "ext2".to_string(),
+            mount_options: vec!["defaults".to_string()],
+            dump: false,
+            fsck_order: 2,
+        },
+        FsEntry {
+            fs_spec: "/dev/mapper/xubuntu--vg--ssd-swap_1".to_string(),
+            mountpoint: PathBuf::from("none"),
+            vfs_type: "swap".to_string(),
+            mount_options: vec!["sw".to_string()],
+            dump: false,
+            fsck_order: 0,
+        },
+        FsEntry {
+            fs_spec: "UUID=be8a49b9-91a3-48df-b91b-20a0b409ba0f".to_string(),
+            mountpoint: PathBuf::from("/mnt/raid"),
+            vfs_type: "ext4".to_string(),
+            mount_options: vec!["errors=remount-ro".to_string(), "user".to_string()],
+            dump: false,
+            fsck_order: 1,
+        },
+    ];
     let input = r#"
 # /etc/fstab: static file system information.
 #
@@ -72,7 +73,7 @@ UUID=be8a49b9-91a3-48df-b91b-20a0b409ba0f /mnt/raid ext4 errors=remount-ro,user 
 }
 
 /// For help with what these fields mean consult: `man fstab` on linux.
-#[derive(Clone,Debug,Eq,PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FsEntry {
     /// The device identifier
     pub fs_spec: String,
@@ -92,6 +93,12 @@ pub struct FsEntry {
 #[derive(Debug)]
 pub struct FsTab {
     location: PathBuf,
+}
+
+impl Default for FsTab {
+    fn default() -> Self {
+        FsTab { location: PathBuf::from("/etc/fstab") }
+    }
 }
 
 impl FsTab {
@@ -124,16 +131,17 @@ impl FsTab {
                 debug!("Unknown fstab entry: {}", line);
                 continue;
             }
-            let fsck_order =
-                u16::from_str(parts[5]).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
+            let fsck_order = u16::from_str(parts[5]).map_err(|e| {
+                Error::new(ErrorKind::InvalidInput, e)
+            })?;
             entries.push(FsEntry {
-                             fs_spec: parts[0].to_string(),
-                             mountpoint: PathBuf::from(parts[1]),
-                             vfs_type: parts[2].to_string(),
-                             mount_options: parts[3].split(",").map(|s| s.to_string()).collect(),
-                             dump: if parts[4] == "0" { false } else { true },
-                             fsck_order: fsck_order,
-                         })
+                fs_spec: parts[0].to_string(),
+                mountpoint: PathBuf::from(parts[1]),
+                vfs_type: parts[2].to_string(),
+                mount_options: parts[3].split(",").map(|s| s.to_string()).collect(),
+                dump: if parts[4] == "0" { false } else { true },
+                fsck_order: fsck_order,
+            })
         }
         Ok(entries)
     }
@@ -142,14 +150,15 @@ impl FsTab {
         let mut file = File::create(&self.location)?;
         let mut bytes_written: usize = 0;
         for entry in entries {
-            bytes_written += file.write(&format!("{spec} {mount} {vfs} {options} {dump} {fsck}\n",
-                                                 spec = entry.fs_spec,
-                                                 mount = entry.mountpoint.display(),
-                                                 vfs = entry.vfs_type,
-                                                 options = entry.mount_options.join(","),
-                                                 dump = if entry.dump { "1" } else { "0" },
-                                                 fsck = entry.fsck_order)
-                                                 .as_bytes())?;
+            bytes_written += file.write(&format!(
+                "{spec} {mount} {vfs} {options} {dump} {fsck}\n",
+                spec = entry.fs_spec,
+                mount = entry.mountpoint.display(),
+                vfs = entry.vfs_type,
+                options = entry.mount_options.join(","),
+                dump = if entry.dump { "1" } else { "0" },
+                fsck = entry.fsck_order
+            ).as_bytes())?;
         }
         file.flush()?;
         debug!("Wrote {} bytes to fstab", bytes_written);
@@ -183,7 +192,10 @@ impl FsTab {
                 false => existing_entries.push(new_entry),
                 true => {
                     // The old entries contain this so lets update it
-                    let position = existing_entries.iter().position(|e| e == &new_entry).unwrap();
+                    let position = existing_entries
+                        .iter()
+                        .position(|e| e == &new_entry)
+                        .unwrap();
                     existing_entries.remove(position);
                     existing_entries.push(new_entry);
                 }
