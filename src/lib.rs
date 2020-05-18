@@ -1,5 +1,4 @@
-#[macro_use]
-extern crate log;
+use log::{debug, trace};
 
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read, Write};
